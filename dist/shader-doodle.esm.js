@@ -824,6 +824,30 @@ class SDNodeElement extends SDBaseElement {
     this.setAttribute('vertices', JSON.stringify(v));
   }
 
+  get forcedHeight() {
+    let h = this.getAttribute('data-forced-height');
+    if (!h) return -1;
+    return parseInt(h);
+  }
+
+  set forcedHeight(h) {
+    let height = parseInt(h);
+    if (!h || !Number.isInteger(height)) return;
+    this.setAttribute('data-forced-height', h);
+  }
+
+  get forcedWidth() {
+    let h = this.getAttribute('data-forced-width');
+    if (!h) return -1;
+    return parseInt(h);
+  }
+
+  set forcedWidth(h) {
+    let width = parseInt(h);
+    if (!h || !Number.isInteger(width)) return;
+    this.setAttribute('data-forced-width', h);
+  }
+
   async init(parentProgram) {
     if (parentProgram && !this.name) {
       this.name = "".concat(UNNAMED_NODE_PREFIX).concat(unnamedNodeIndex++);
@@ -1569,7 +1593,7 @@ var getMouseOrTouch = (e => {
   return [a.clientX || 0, a.clientY || 0];
 });
 
-function Surface(element, program) {
+function Surface(element, program, sdNode) {
   const canvas = element instanceof HTMLCanvasElement ? element : document.createElementNS('http://www.w3.org/1999/xhtml', 'canvas');
   const ctx2d = canvas.getContext('2d');
   const clickCallbacks = new Set();
@@ -1632,16 +1656,21 @@ function Surface(element, program) {
   function updateRect() {
     const newRect = canvas.getBoundingClientRect();
     visible = newRect.top + newRect.height >= 0 && newRect.left + newRect.width >= 0 && newRect.bottom - newRect.height <= (window.innerHeight || document.documentElement.clientHeight) && newRect.right - newRect.width <= (window.innerWidth || document.documentElement.clientWidth);
+    const h = sdNode.forcedHeight && sdNode.forcedHeight > 0 ? sdNode.forcedHeight : newRect.height;
+    const w = sdNode.forcedWidth && sdNode.forcedWidth > 0 ? sdNode.forcedWidth : newRect.width;
 
-    if (newRect.width !== rect.width) {
-      canvas.width = ustate[RESOLUTION].value[0] = newRect.width;
+    if (w !== rect.width) {
+      canvas.width = ustate[RESOLUTION].value[0] = w;
     }
 
-    if (newRect.height !== rect.height) {
-      canvas.height = ustate[RESOLUTION].value[1] = newRect.height;
+    if (h !== rect.height) {
+      canvas.height = ustate[RESOLUTION].value[1] = h;
     }
 
-    rect = newRect;
+    rect = {
+      width: canvas.width,
+      height: canvas.height
+    };
   }
 
   function render(rendererCanvas, updateRendererSize, rendererWidth, rendererHeight, pixelRatio, ustateArray) {
@@ -1721,7 +1750,7 @@ class ShaderDoodleElement extends SDNodeElement {
     this.shadow.innerHTML = Template.render();
     const canvas = Template.map(this.shadow).canvas;
     await super.init();
-    this.surface = Surface(canvas, this.program);
+    this.surface = Surface(canvas, this.program, this);
     this.renderer.addSurface(this.surface);
   }
 
