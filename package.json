@@ -20,7 +20,10 @@
   ],
   "scripts": {
     "build": "rollup -c",
-    "precommit": "lint-staged",
+    "precommit": [
+      "lint-staged",
+      "build"
+    ],
     "dev": "rollup -c -w",
     "prepublishOnly": "npm run build",
     "pretty": "npm run pretty-src -- \"src/**/*.js\" && npm run pretty-pkg",
