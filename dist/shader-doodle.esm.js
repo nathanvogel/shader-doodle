@@ -323,7 +323,7 @@ Renderer.singleton = function () {
 };
 
 Renderer.resetSingleton = function () {
-  singletonRenderer.dispose();
+  if (singletonRenderer) singletonRenderer.dispose();
   singletonRenderer = Renderer();
 };
 
@@ -701,7 +701,9 @@ function Program(gl, vs, fs, vertices) {
   }
 
   function dispose() {
-    textures.forEach(t => t.dispose());
+    textures.forEach(t => {
+      if (typeof t.dispose === 'function') t.dispose();
+    });
     textures.clear();
     gl.deleteProgram(program);
   }
@@ -1515,8 +1517,9 @@ class TextureElement extends SDBaseElement {
   }
 
   disconnectedCallback() {
-    this.program.removeTexture(this.texture);
-    this.texture.dispose();
+    this.program.removeTexture(this.texture); // Dispose doesn't seem to exist on this object. A TODO?
+
+    if (typeof this.texture.dispose === 'function') this.texture.dispose();
   }
 
   get forceUpdate() {
@@ -1747,6 +1750,7 @@ class ShaderDoodleElement extends SDNodeElement {
   }
 
   async init() {
+    Renderer.resetSingleton();
     this.shadow.innerHTML = Template.render();
     const canvas = Template.map(this.shadow).canvas;
     await super.init();
